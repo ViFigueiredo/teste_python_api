@@ -1,10 +1,11 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, ForeignKey, text
 from sqlalchemy.exc import OperationalError
 from urllib.parse import quote_plus
 from dotenv import load_dotenv
+from datetime import datetime
 import os
 
 # Carrega as variáveis de ambiente do arquivo .env
@@ -17,15 +18,6 @@ connection_str = (
     f"UID={os.getenv('DB_USER')};"
     f"PWD={os.getenv('DB_PASSWORD')};"
     f"Encrypt=no"
-)
-
-connection_str = (
-    "Driver={ODBC Driver 18 for SQL Server};"
-    "Server=192.168.0.200\\sqlserverfull;"
-    "Database=teste_python;"
-    "UID=dbAdmin;"
-    "PWD=Ctelecom2017;"
-    "Encrypt=no"
 )
 
 app = Flask(__name__)
@@ -41,10 +33,22 @@ class User(db.Model):
     name = db.Column(db.String(128))
     email = db.Column(db.String(128), unique=True)
     password = db.Column(db.String(128))
-    role = db.Column(db.Integer)
-    created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
+    # Chave estrangeira para a tabela Role
+    role_id = db.Column(db.Integer, ForeignKey('role.id'))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(
-        db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current)
+        db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class Role(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50), unique=True)
+    value = db.Column(db.String(5), unique=True)
+    # Relacionamento com a tabela User
+    users = db.relationship('User', backref='role', lazy=True)
+    created_at = db.Column(db.DateTime, server_default=text("(getdate())"))
+    updated_at = db.Column(db.DateTime, server_default=text(
+        "(getdate())"), onupdate=text("(getdate())"))
 
 
 # Teste de conexão

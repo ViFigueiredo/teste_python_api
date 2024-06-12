@@ -66,6 +66,83 @@ def login():
     return jsonify(access_token=access_token), 200
 
 
+@app.route('/roles/<int:role>', methods=['PUT'])
+# @jwt_required()
+def update_role(role_id):
+    data = request.get_json()
+    new_name = data.get('name')
+    new_value = data.get('value')
+
+    if new_name:
+        cursor.execute(f"UPDATE [role] SET name = '{
+                       new_name}' WHERE id = {role_id}"
+                       )
+
+    if new_value:
+        cursor.execute(
+            f"UPDATE [role] SET email = '{new_value}' WHERE id = {role_id}"
+        )
+
+    conn.commit()
+
+    return jsonify({'message': 'role updated successfully'}), 200
+
+
+@app.route('/roles/<int:role>', methods=['DELETE'])
+# @jwt_required()
+def delete_role(role_id):
+    cursor.execute(f"DELETE FROM [role] WHERE id = {role_id}")
+    conn.commit()
+
+    return jsonify({'message': 'role deleted successfully'}), 200
+
+
+@app.route('/roles', methods=['POST'])
+# @jwt_required()
+def add_role():
+    data = request.get_json()
+    cursor.execute(
+        f"INSERT INTO [role] (name, value) VALUES ('{
+            data['name']}', '{data['value']}')"
+    )
+    conn.commit()
+
+    return jsonify({'message': 'role added successfully'}), 201
+
+
+@app.route('/roles/<int:role>', methods=['GET'])
+# @jwt_required()
+def get_role(role_id):
+    cursor.execute(f"SELECT * FROM [role] WHERE id = {role_id}")
+
+    row = cursor.fetchone()
+    if row is None:
+        return jsonify({'error': 'role not found'}), 404
+
+    role = {
+        'id': row.id,
+        'name': row.name,
+        'value': row.value,
+    }
+    return jsonify(role)
+
+
+@app.route('/roles', methods=['GET'])
+# @jwt_required()
+def get_roles():
+    cursor.execute("SELECT * FROM [role]")
+
+    roles = []
+    for row in cursor:
+        roles.append({
+            'id': row.id,
+            'name': row.name,
+            'value': row.value,
+        })
+
+    return jsonify(roles)
+
+
 @app.route('/users/<int:user_id>', methods=['PUT'])
 @jwt_required()
 def update_user(user_id):

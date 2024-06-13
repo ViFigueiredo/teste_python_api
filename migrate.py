@@ -33,7 +33,6 @@ class User(db.Model):
     name = db.Column(db.String(128))
     email = db.Column(db.String(128), unique=True)
     password = db.Column(db.String(128))
-    # Chave estrangeira para a tabela Role
     role_id = db.Column(db.Integer, ForeignKey('role.id'))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(
@@ -43,12 +42,26 @@ class User(db.Model):
 class Role(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), unique=True)
-    value = db.Column(db.String(5), unique=True)
-    # Relacionamento com a tabela User
+    value = db.Column(db.String(5))
     users = db.relationship('User', backref='role', lazy=True)
     created_at = db.Column(db.DateTime, server_default=text("(getdate())"))
     updated_at = db.Column(db.DateTime, server_default=text(
         "(getdate())"), onupdate=text("(getdate())"))
+
+
+class Route(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    path = db.Column(db.String(128), unique=True)
+
+
+class RoleRoute(db.Model):
+    role_id = db.Column(db.Integer, db.ForeignKey('role.id'), primary_key=True)
+    route_id = db.Column(db.Integer, db.ForeignKey(
+        'route.id'), primary_key=True)
+    role = db.relationship('Role', backref=db.backref(
+        'role_routes', cascade='all, delete-orphan'))
+    route = db.relationship('Route', backref=db.backref(
+        'role_routes', cascade='all, delete-orphan'))
 
 
 # Teste de conexão
@@ -59,5 +72,3 @@ try:
     connection.close()
 except OperationalError:
     print("Falha na conexão. Por favor, verifique suas credenciais e tente novamente.")
-
-# Se a conexão for bem-sucedida, você pode prosseguir com as migrações.
